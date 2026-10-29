@@ -1,0 +1,17 @@
+name: ElevatorPlus
+version: 1.0.0
+main: es.elevatorplus.ElevatorPlugin
+api-version: '1.21'
+description: Ascensores animados 1x1 y 2x2 con puertas correderas y sonido 3D
+commands:
+  elevator:
+    description: Gestiona ascensores
+    aliases: [asc, ascensor]
+    usage: /<command> help
+permissions:
+  elevator.admin:
+    description: Crear y editar ascensores
+    default: op
+  elevator.use:
+    description: Usar ascensores
+    default: true

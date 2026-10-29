@@ -1,0 +1,10 @@
+# Velocidad maxima en bloques por tick (0.35 = 7 bloques/segundo)
+max-speed: 0.35
+# Aceleracion en bloques por tick^2 (mas bajo = arranque/frenada mas suave)
+acceleration: 0.015
+# Segundos que las puertas se quedan abiertas antes de cerrarse solas
+hold-seconds: 5
+# true  = cabina y puertas con los modelos del texture pack Normsafio v20
+#         (iron_ingot CMD 9101/9102/9103). Los jugadores necesitan el pack.
+# false = cabina hecha con bloques vanilla (no requiere resource pack)
+use-resource-pack: true
