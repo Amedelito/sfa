@@ -1,0 +1,82 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+# Cancela ejecuciones antiguas de la misma rama/PR
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Compilar plugin
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: JDK 21 (Temurin) + cache de Maven
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      # Funciona tanto si pom.xml esta en la raiz como dentro de una subcarpeta (p. ej. ElevatorPlus/)
+      - name: Localizar pom.xml
+        id: pom
+        run: |
+          POM=$(find . -maxdepth 3 -name pom.xml -not -path '*/target/*' | sort | head -n 1)
+          if [ -z "$POM" ]; then
+            echo "::error title=pom.xml no encontrado::No hay ningun pom.xml en el repositorio. Estructura:"
+            find . -maxdepth 3 -not -path './.git/*' | sort | head -n 60
+            exit 1
+          fi
+          echo "pom=$POM" >> "$GITHUB_OUTPUT"
+          echo "Usando $POM"
+
+      - name: Compilar (mvn package)
+        run: mvn -B -ntp -e -f "${{ steps.pom.outputs.pom }}" clean package 2>&1 | tee build.log
+
+      - name: Subir log si falla
+        if: failure()
+        uses: actions/upload-artifact@v5
+        with:
+          name: build-log
+          path: build.log
+          if-no-files-found: ignore
+
+      - name: Subir plugin (.jar)
+        uses: actions/upload-artifact@v5
+        with:
+          name: ElevatorPlus
+          path: '**/target/ElevatorPlus.jar'
+          if-no-files-found: error
+
+  release:
+    name: Publicar release
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Descargar plugin
+        uses: actions/download-artifact@v5
+        with:
+          name: ElevatorPlus
+
+      - name: Crear release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: '**/ElevatorPlus.jar'
+          generate_release_notes: true
